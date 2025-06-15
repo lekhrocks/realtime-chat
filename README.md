@@ -46,24 +46,24 @@ A modern, production-ready real-time chat and file-sharing backend built with **
 
 ```mermaid
 flowchart TD
-  User[Web/Frontend]
-  Backend[Spring Boot App]
-  REST[REST API (Swagger)]
-  GraphQL[GraphQL API (Playground)]
-  WS[WebSocket]
-  Admin[Admin Dashboard]
-  Actuator[Actuator/Prometheus]
-  Audit[Audit Log Service]
-  Notif[Notification Service]
-  UserSvc[User Service]
-  FileSvc[File Service]
-  DB[(PostgreSQL)]
-  Cache[(Redis)]
-  S3[(S3)]
-  ClamAV[(ClamAV)]
-  SMTP[(SMTP)]
-  Prom[(Prometheus/Grafana)]
-  Logs[(ELK/EFK)]
+  User["Web/Frontend"]
+  Backend["Spring Boot App"]
+  REST["REST API (Swagger)"]
+  GraphQL["GraphQL API (Playground)"]
+  WS["WebSocket"]
+  Admin["Admin Dashboard"]
+  Actuator["Actuator/Prometheus"]
+  Audit["Audit Log Service"]
+  Notif["Notification Service"]
+  UserSvc["User Service"]
+  FileSvc["File Service"]
+  DB["PostgreSQL"]
+  Cache["Redis"]
+  S3["S3"]
+  ClamAV["ClamAV"]
+  SMTP["SMTP"]
+  Prom["Prometheus/Grafana"]
+  Logs["ELK/EFK"]
 
   User-->|REST/GraphQL|REST
   User-->|GraphQL|GraphQL
@@ -76,7 +76,7 @@ flowchart TD
   UserSvc-->|DB|DB
   UserSvc-->|Cache|Cache
   FileSvc-->|S3|S3
-  FileSvc-->|Virus Scan|ClamAV
+  FileSvc-->|VirusScan|ClamAV
   Notif-->|Email|SMTP
   Actuator-->|Metrics|Prom
   Backend-->|Logs|Logs
