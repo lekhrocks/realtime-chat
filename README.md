@@ -1,78 +1,195 @@
 # Real-Time Chat Application
 
-A real-time chat application built with **Java**, **Spring Boot**, **GraphQL**, **WebSockets**, and **AWS AppSync**. This app allows users to authenticate, send and receive messages in real-time, and use a secure JWT-based authentication system.
+A modern, production-ready real-time chat and file-sharing backend built with **Java 21**, **Spring Boot 3.x**, **GraphQL**, **WebSockets**, **REST**, and **AWS S3**.
 
-## Tech Stack
-
-- **Backend**:
-    - **Spring Boot** 3.4.5 (Java 21)
-    - **Spring Security** for authentication and authorization
-    - **JWT (JSON Web Tokens)** for secure authentication
-    - **GraphQL** for flexible data fetching (queries, mutations, and subscriptions)
-    - **WebSockets** for real-time communication
-    - **AWS AppSync** for managed GraphQL API with real-time updates
-- **Frontend** (not included in this repository):
-    - WebSocket connection handling
-    - GraphQL client to interact with the API
+---
 
 ## Features
 
-- **User Authentication**: Users can log in with a username and password. Upon successful login, they receive a **JWT token** for authentication in subsequent requests.
-- **Real-Time Messaging**: Messages are sent and received in real-time using **WebSockets**. Users can see messages instantly without refreshing the page.
-- **GraphQL API**: The app uses GraphQL for querying data, sending messages (mutations), and receiving real-time message updates (subscriptions).
-- **Secure Communication**: JWT tokens ensure that users are authenticated before accessing any private resources or sending messages.
+- **User Management**
+  - Registration, email verification, password reset, profile, avatar upload
+  - User roles/permissions (USER, ADMIN)
+  - User preferences (notification settings, file visibility, etc.)
 
-## Architecture Overview
+- **Authentication & Security**
+  - JWT authentication (REST, GraphQL, WebSocket)
+  - CORS, HTTPS, rate limiting, audit logging
+  - Password hashing (BCrypt), email verification
 
-1. **Authentication**:
-    - **JWT Authentication** is used for secure login. Upon successful login, a JWT token is generated and returned to the client. This token is sent with every request to authenticate the user.
-2. **Real-Time Communication**:
-    - The application uses **WebSockets** and **GraphQL Subscriptions** to deliver messages to connected users in real-time.
-3. **GraphQL**:
-    - **Queries** allow users to fetch their information.
-    - **Mutations** are used to send messages.
-    - **Subscriptions** provide real-time updates to users when new messages are sent.
+- **Real-Time Messaging**
+  - WebSocket and GraphQL Subscriptions
+  - Message types: text, image, file
+  - Input validation, filtering, pagination, search
 
-## API Endpoints
+- **File Management**
+  - Upload to S3, virus scanning (ClamAV), quotas, sharing, access control
+  - File deletion, listing, signed URLs, per-user folders
+  - Avatar upload and validation
 
-### 1. **Authentication**
-- **POST /login**: Authenticates a user and returns a JWT token.
+- **Notifications**
+  - Persistent, email, and WebSocket notifications
+  - Pagination, search, mark as read, delete, bulk actions
 
-### 2. **GraphQL Queries**
-- **Query me**: Returns the current authenticated user's details (e.g., username).
+- **Admin Dashboard**
+  - User, file, quota, and system health monitoring
+  - Audit log display (search, pagination)
+  - Role management, user profile editing
 
-  Example:
-  ```graphql
-  query {
-    me
+- **Monitoring & Observability**
+  - Actuator endpoints (health, liveness, readiness, Prometheus metrics)
+  - Centralized logging (ELK/EFK/cloud)
+  - Dockerized, Flyway migrations, production profiles
+
+---
+
+## System Design Diagram
+
+```mermaid
+flowchart TD
+  User[Web/Frontend]
+  Backend[Spring Boot App]
+  REST[REST API (Swagger)]
+  GraphQL[GraphQL API (Playground)]
+  WS[WebSocket]
+  Admin[Admin Dashboard]
+  Actuator[Actuator/Prometheus]
+  Audit[Audit Log Service]
+  Notif[Notification Service]
+  UserSvc[User Service]
+  FileSvc[File Service]
+  DB[(PostgreSQL)]
+  Cache[(Redis)]
+  S3[(S3)]
+  ClamAV[(ClamAV)]
+  SMTP[(SMTP)]
+  Prom[(Prometheus/Grafana)]
+  Logs[(ELK/EFK)]
+
+  User-->|REST/GraphQL|REST
+  User-->|GraphQL|GraphQL
+  User-->|WebSocket|WS
+  User-->|Admin|Admin
+  REST-->|Service|UserSvc
+  GraphQL-->|Service|UserSvc
+  WS-->|Notifications|Notif
+  Admin-->|Audit|Audit
+  UserSvc-->|DB|DB
+  UserSvc-->|Cache|Cache
+  FileSvc-->|S3|S3
+  FileSvc-->|Virus Scan|ClamAV
+  Notif-->|Email|SMTP
+  Actuator-->|Metrics|Prom
+  Backend-->|Logs|Logs
+  Audit-->|Logs|Logs
+  FileSvc-->|Audit|Audit
+  UserSvc-->|Audit|Audit
+  Notif-->|Audit|Audit
+  Admin-->|Health|Actuator
+  Actuator-->|Health|Prom
+```
+
+---
+
+## API Documentation
+
+- **REST API (Swagger UI):** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **GraphQL Playground:** [http://localhost:8080/graphiql](http://localhost:8080/graphiql)
+
+---
+
+## Code Samples
+
+### REST: Register User
+
+```sh
+curl -X POST "http://localhost:8080/api/user/register" -d "username=alice&email=alice@example.com&password=secret"
+```
+
+### REST: Login
+
+```sh
+curl -X POST "http://localhost:8080/api/user/login" -d "username=alice&password=secret"
+```
+
+### GraphQL: Send Message
+
+```graphql
+mutation {
+  message(body: "Hello!", to: "bob", type: "text", token: "Bearer <JWT>") {
+    items { from to body sentAt messageType }
   }
+}
+```
 
-### 3. **GraphQL Mutations**
-- **Mutation message**: Sends a message to another user.
+### GraphQL: Subscribe to Inbox
 
-  Example:
-  ```graphql
-  mutation {
-    message(body: "Hello, World!", to: "userB") {
-        from
-        to
-        body
-        sentAt
-    }
+```graphql
+subscription {
+  inbox(to: "bob", token: "Bearer <JWT>") {
+    items { from to body sentAt messageType }
   }
-  ```
+}
+```
 
-### 4. **GraphQL Subscriptions**
-- **Subscription inbox**: Listens for incoming messages for a particular user.
+### File Upload (Avatar)
 
-    Example:
-    ```graphql
-    subscription {
-        inbox(to: "userA") {
-            from
-            to
-            body
-            sentAt
-        }
-    }
-    ```
+```sh
+curl -X POST "http://localhost:8080/api/user/upload-avatar" -F "username=alice" -F "file=@avatar.png"
+```
+
+### Postman Collection
+
+- Export from Swagger UI or see `postman_collection.json` (to be included).
+
+---
+
+## Setup & Environment
+
+1. **Clone the repo:**
+   ```sh
+   git clone <repo-url>
+   cd realtime-chat
+   ```
+2. **Configure environment variables:**
+   - See `src/main/resources/application.properties` for required secrets (JWT, DB, AWS, email, etc.)
+   - Use `.env` or your orchestrator's secret manager for production
+3. **Run with Docker Compose:**
+   ```sh
+   docker-compose up --build
+   ```
+   - Services: app, PostgreSQL, Redis, ClamAV, (optionally NGINX for HTTPS)
+4. **Database migrations:**
+   - Flyway runs automatically on startup
+
+---
+
+## Deployment
+
+- **Production:**
+  - Set `SPRING_PROFILES_ACTIVE=prod`
+  - Use a real SMTP server, S3 bucket, and secure secrets
+  - Use a reverse proxy (NGINX, ALB) for HTTPS
+  - Configure Prometheus/Grafana for monitoring
+  - Forward logs to ELK/EFK/cloud logging
+
+---
+
+## Troubleshooting
+
+- **Health checks:**
+  - [http://localhost:8081/actuator/health](http://localhost:8081/actuator/health)
+  - [http://localhost:8081/actuator/prometheus](http://localhost:8081/actuator/prometheus)
+- **Common issues:**
+  - Check Docker logs for errors
+  - Ensure all secrets are set via environment variables
+  - Check S3, SMTP, and DB connectivity
+
+---
+
+## Contributing
+
+- PRs welcome! Please add tests and update documentation.
+
+---
+
+**For more details, see the code, Swagger UI, and GraphQL Playground.**

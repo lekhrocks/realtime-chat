@@ -1,5 +1,9 @@
 package com.example.realtime.chat.realtime_chat.security.interceptor;
 
+import com.example.realtime.chat.realtime_chat.security.JwtUtil;
+
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -11,9 +15,20 @@ import java.util.Map;
 @Component
 public class AuthWebSocketInterceptor implements HandshakeInterceptor {
 
+    private final JwtUtil jwtUtil;
+
+    @Autowired
+    public AuthWebSocketInterceptor(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
+
     private boolean isValidToken(String token) {
-        // Validate the token (you can use JwtUtil here)
-        return true;  // For simplicity, always valid
+        try {
+            String username = jwtUtil.extractUsername(token.replace("Bearer ", ""));
+            return jwtUtil.validateToken(token.replace("Bearer ", ""), username);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override
@@ -27,7 +42,7 @@ public class AuthWebSocketInterceptor implements HandshakeInterceptor {
     }
 
     @Override
-    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Exception exception) {
+    public void afterHandshake(@NotNull ServerHttpRequest request, @NotNull ServerHttpResponse response, @NotNull WebSocketHandler wsHandler, Exception exception) {
 
     }
 }

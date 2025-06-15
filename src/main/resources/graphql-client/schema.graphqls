@@ -1,29 +1,71 @@
+"""
+Root schema for the real-time chat application
+"""
 schema {
     query: Query
     mutation: Mutation
     subscription: Subscription
 }
 
+"""
+Root queries
+"""
+# me: Returns the current authenticated user's details (e.g., username)
 type Query {
+    """Returns the current authenticated user's details (e.g., username)"""
     me: String
 }
 
+# Root mutations
+# message: Sends a message to another user (body, to, type, token)
 type Mutation {
-    message(body: String!, to: String!): Page!
+    """Sends a message to another user (body, to, type, token)"""
+    message(
+        """Message body (text or file URL)""" body: String!,
+        """Recipient username""" to: String!,
+        """Message type (text, image, file)""" type: String!,
+        """JWT for authentication""" token: String!
+    ): Page!
 }
 
+# Root subscriptions
+# inbox: Listens for incoming messages for a particular user
+# Arguments:
+#   to: recipient username
+#   from: sender username (optional)
+#   token: JWT for authentication
+#   type: message type (optional)
 type Subscription {
-    inbox(to: String): Page
-    @aws_subscribe(mutations: ["message"])
+    """Listens for incoming messages for a particular user
+    Arguments:
+      to: recipient username
+      from: sender username (optional)
+      token: JWT for authentication
+      type: message type (optional)
+    """
+    inbox(
+        """Recipient username""" to: String!,
+        """Sender username (optional)""" from: String,
+        """JWT for authentication""" token: String!,
+        """Message type (optional)""" type: String
+    ): Page @aws_subscribe(mutations: ["message"])
 }
 
+# Message type
+# from: sender username
+# to: recipient username
+# body: message content or file URL
+# sentAt: ISO-8601 timestamp
 type Message {
-    from: String!
-    to: String!
-    body: String!
-    sentAt: String!
+    """Sender username""" from: String!
+    """Recipient username""" to: String!
+    """Message content or file URL""" body: String!
+    """ISO-8601 timestamp""" sentAt: String!
+    """Message type (text, image, file)""" messageType: String
 }
 
+# Page type for paginated results
+# items: list of messages
 type Page {
-    items: [Message!]!
+    """List of messages""" items: [Message!]!
 }

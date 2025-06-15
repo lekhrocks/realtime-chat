@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+<h1>Admin Dashboard</h1>
+<h2>Users</h2>
+<table border="1">
+    <tr><th>ID</th><th>Username</th><th>Email</th><th>Email Verified</th><th>Role</th><th>Avatar</th></tr>
+    <tr th:each="user : ${users}">
+        <td th:text="${user.id}"></td>
+        <td th:text="${user.username}"></td>
+        <td th:text="${user.email}"></td>
+        <td th:text="${user.emailVerified}"></td>
+        <td th:text="${user.role}"></td>
+        <td><img th:src="${user.avatarUrl}" width="40" height="40" th:if="${user.avatarUrl != null}"/></td>
+    </tr>
+</table>
+<h2>Files</h2>
+<!-- TODO: List files, quotas per user -->
+<h2>System Health</h2>
+<iframe src="/actuator/health" width="600" height="100"></iframe>
+<h2>Audit Logs</h2>
+<form method="get" th:action="@{/admin/dashboard}">
+    <input type="text" name="search" th:value="${search}" placeholder="Search logs..."/>
+    <input type="hidden" name="page" value="0"/>
+    <input type="hidden" name="size" th:value="${size}"/>
+    <button type="submit">Search</button>
+</form>
+<table border="1">
+    <tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr>
+    <tr th:each="log : ${auditLogs}">
+        <td th:text="${log.timestamp}"></td>
+        <td th:text="${log.user}"></td>
+        <td th:text="${log.action}"></td>
+        <td th:text="${log.details}"></td>
+    </tr>
+</table>
+<div>
+    <span th:text="'Page: ' + ${page}"></span>
+    <a th:href="@{/admin/dashboard(page=${page-1},size=${size},search=${search})}" th:if="${page > 0}">Prev</a>
+    <a th:href="@{/admin/dashboard(page=${page+1},size=${size},search=${search})}">Next</a>
+</div>
+</body>
+</html> 
